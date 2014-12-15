@@ -1,6 +1,11 @@
 import de.voidplus.leapmotion.*;
 // Add the library to the sketch
 import signal.library.*;
+import oscP5.*;
+import netP5.*;
+
+OscP5 oscP5;
+NetAddress myRemoteLocation;
 
 // -----------------------------------------------------
 // Create the filter
@@ -55,6 +60,10 @@ void setup(){
     //size(800, 500, OPENGL);
     size(512,512);
     background(180);
+
+    oscP5 = new OscP5(this,12001);
+    myRemoteLocation = new NetAddress("127.0.0.1",12002);
+
     // ...
     rightHandYFilter = new SignalFilter(this);
     rightHandZFilter = new SignalFilter(this);
@@ -433,4 +442,17 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
 
 
 }
+  sendOSCMessages();
+}
+
+void sendOSCMessages() {
+  float bpm = 0;
+  float dynamics = 0;
+  float registration = 0;
+  float weighting = 0;
+
+  OscMessage oscMessageBpm = new OscMessage("/hyperconductor/bpm");
+  oscMessageBpm.add(bpm);
+  oscP5.send(oscMessageBpm, myRemoteLocation);
+
 }
