@@ -446,13 +446,22 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
 }
 
 void sendOSCMessages() {
-  float bpm = 0;
-  float dynamics = 0;
-  float registration = 0;
-  float weighting = 0;
-
   OscMessage oscMessageBpm = new OscMessage("/hyperconductor/bpm");
   oscMessageBpm.add(bpm);
   oscP5.send(oscMessageBpm, myRemoteLocation);
+
+  OscMessage oscMessageDynamics = new OscMessage("/hyperconductor/dynamics");
+  oscMessageDynamics.add(dynamics);
+  oscP5.send(oscMessageDynamics, myRemoteLocation);
+
+  OscMessage oscMessageRegistration = new OscMessage("/hyperconductor/registration");
+  oscMessageRegistration.add(registration);
+  oscP5.send(oscMessageRegistration, myRemoteLocation);
+
+  OscMessage oscMessageWeighting = new OscMessage("/hyperconductor/weighting");
+  oscMessageWeighting.add(weighting);
+  oscP5.send(oscMessageWeighting, myRemoteLocation);
+
+
 
 }
