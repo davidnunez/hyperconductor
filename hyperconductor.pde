@@ -302,6 +302,7 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   rightHandXSlope = xFiltered2 - xFiltered1;
   if (rightHandXSlopePrev > 0) {
     if (rightHandXSlope <= 0) {
+      articulation = map(abs(rightHandXDownBeatY - rightHandXUpBeatYPrev), 0, sectionSize-textBgHeight, 0, 1);
       
       ellipse(x2, xFiltered2, 10,10);
       rightHandXDownBeatX = x2;
@@ -375,7 +376,7 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   fill(textBgColor);
   rect(0, 0, width, textBgHeight );
   fill(255);
-  text( "X-Position\tregistration:" + registration, 10, 20 );
+  text( "X-Position\tregistration:" + registration + " articulation: " + articulation, 10, 20 );
 }
 void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
 
