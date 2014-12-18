@@ -199,20 +199,20 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
   // Draw X signals
   pushMatrix();
   translate(0, sectionSize * 1);
-  drawDynamicsSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+  drawYSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
 
 
   pushMatrix();
   translate(0, sectionSize * 0);
-  drawRegistrationSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+  drawXSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
 
 
 
   pushMatrix();
   translate(0, sectionSize * 2);
-  drawWeightingSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+  drawZSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
 
 
@@ -252,7 +252,7 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
   sendOSCMessages();
 }
 
-void drawWeightingSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
+void drawZSignals(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
   println("sectionSize: "+sectionSize);
 
   noStroke();
@@ -281,7 +281,7 @@ void drawWeightingSignal(float leftHandX, float leftHandY, float leftHandZ, floa
   text( "Z-Position\tweighting: " + weighting, 10, 20 );
 }
 
-void drawRegistrationSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
+void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
   noStroke();
   fill(255);
   float xNoisy1 = map(rightHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);
@@ -377,7 +377,7 @@ void drawRegistrationSignal(float leftHandX, float leftHandY, float leftHandZ, f
   fill(255);
   text( "X-Position\tregistration:" + registration, 10, 20 );
 }
-void drawDynamicsSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
+void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
 
 
   //------------------------------------
