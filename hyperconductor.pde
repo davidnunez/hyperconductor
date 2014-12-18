@@ -19,7 +19,11 @@ float minCutoff = 0.05; // decrease this to get rid of slow speed jitter
 float beta      = 4.0;  // increase this to get rid of high speed lag
 
 float xPos = 0;
+float textBgHeight = 30;
+color textBgColor = color(150);
+float sectionSize = 0;
 
+float x1, x2 = 0;
 float rightHandYPrev, rightHandYFiltered, rightHandYFilteredPrev;
 float rightHandZPrev, rightHandZFiltered, rightHandZFilteredPrev;
 
@@ -54,12 +58,14 @@ float bpm = 0;
 float dynamics = 0;
 float registration = 0;
 float weighting = 0;
+float articulation = 0;
 LeapMotion leap;
 
 void setup(){
     //size(800, 500, OPENGL);
     size(512,512);
     background(180);
+    sectionSize = height / 3.0;
 
     oscP5 = new OscP5(this,12001);
     myRemoteLocation = new NetAddress("127.0.0.1",12002);
@@ -146,6 +152,7 @@ void leapOnExit(){
 void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ)
 {
 
+
   // Pass the parameters to the filter
   rightHandYFilter.setMinCutoff(minCutoff);
   rightHandYFilter.setBeta(beta);
@@ -182,227 +189,30 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
   
   
 
-  float textBgHeight = 30;
-  color textBgColor = color(150);
 
   // Compute x positions to draw the plot line
-  float x1 = xPos-0.1;
-  float x2 = xPos;  
+  x1 = xPos-0.1;
+  x2 = xPos;  
   
-  float sectionSize = height / 3.0;
 
   //------------------------------------
   // Draw X signals
   pushMatrix();
   translate(0, sectionSize * 1);
-  noStroke();
-  fill(255);
-  float xNoisy1 = map(rightHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);
-  float xNoisy2 = map(rightHandX, 0.0, 1.0, textBgHeight, sectionSize);
-  stroke(10);
-  line(x1, xNoisy1, x2, xNoisy2);
-  xNoisy1 = map(leftHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);  
-  xNoisy2 = map(leftHandX, 0.0, 1.0, textBgHeight, sectionSize);
-  line(x1, xNoisy1, x2, xNoisy2);
+  drawDynamicsSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
-
 
 
   pushMatrix();
-  translate(0, sectionSize * 1.0);
-  noStroke();
-  float xFiltered1 = map(rightHandXFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
-  float xFiltered2 = map(rightHandXFiltered, 0.0, 1.0, textBgHeight, sectionSize);
-  stroke(255);
-  line(x1, xFiltered1, x2, xFiltered2);
-
-
-  rightHandXSlope = xFiltered2 - xFiltered1;
-  if (rightHandXSlopePrev > 0) {
-  	if (rightHandXSlope <= 0) {
-      sendOSCMessage("/hyperconductor/bpm", bpm);
-      
-  		ellipse(x2, xFiltered2, 10,10);
-  		rightHandXDownBeatX = x2;
-  		rightHandXDownBeatY = xFiltered2;
-  		rightHandXDownBeatXPrev = rightHandXDownBeatX;
-  		rightHandXDownBeatYPrev = rightHandXDownBeatY;
-  		
-  	}
-  }
-  if (rightHandXSlopePrev < 0) {
-  	if (rightHandXSlope >= 0) {
-  		fill(10);
-  		ellipse(x2, xFiltered2, 10, 10);
-  		fill(255);
-  		rightHandXUpBeatX = x2;
-  		rightHandXUpBeatY = xFiltered2;
-  		rightHandXUpBeatXPrev = rightHandXUpBeatX;
-  		rightHandXUpBeatYPrev = rightHandXUpBeatY;
-  	}
-  }
-
-  rightHandXSlopePrev = rightHandXSlope;
-
-
-
-  xFiltered1 = map(leftHandXFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
-  xFiltered2 = map(leftHandXFiltered, 0.0, 1.0, textBgHeight, sectionSize);
-  line(x1, xFiltered1, x2, xFiltered2);
-
-  leftHandXSlope = xFiltered2 - xFiltered1;
-  if (leftHandXSlopePrev > 0) {
-  	if (leftHandXSlope <= 0) {
-  		ellipse(x2, xFiltered2, 10,10);
-  		leftHandXDownBeatX = x2;
-  		leftHandXDownBeatY = xFiltered2;
-  		leftHandXDownBeatXPrev = leftHandXDownBeatX;
-  		leftHandXDownBeatYPrev = leftHandXDownBeatY;
-  		
-  	}
-  }
-  if (leftHandXSlopePrev < 0) {
-  	if (leftHandXSlope >= 0) {
-  		fill(10);
-  		ellipse(x2, xFiltered2, 10, 10);
-  		fill(255);
-  		leftHandXUpBeatX = x2;
-  		leftHandXUpBeatY = xFiltered2;
-  		leftHandXUpBeatXPrev = leftHandXUpBeatX;
-  		leftHandXUpBeatYPrev = leftHandXUpBeatY;
-  	}
-  }
-
-  leftHandXSlopePrev = leftHandXSlope;
-
-
-
-  stroke(255,100,0, 100);
-
-
-
-  registration = dist(x2, rightHandXUpBeatY, x2, leftHandXDownBeatY);
-
-
-
-//  line(x2, rightHandXUpBeatY, x2, leftHandXDownBeatY);
-  line(x2, sectionSize/2 - 0.5 * registration, x2, sectionSize/2 + 0.5 * registration); 
-
-  registration = map(registration, 0, 500, 0, 1);
-
-
-
-
-
-  noStroke();
-  fill(textBgColor);
-  rect(0, 0, width, textBgHeight );
-  fill(255);
-  text( "X-Position\tregistration:" + registration, 10, 20 );
-  
-
+  translate(0, sectionSize * 0);
+  drawRegistrationSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
 
 
 
-
-
-
-
-
-  //------------------------------------
-  // Draw noisy signal
   pushMatrix();
   translate(0, sectionSize * 2);
-  noStroke();
-  fill(255);
-  float yNoisy1 = map(rightHandYPrev, 0.0, 1.0, textBgHeight, sectionSize);
-  float yNoisy2 = map(rightHandY, 0.0, 1.0, textBgHeight, sectionSize);
-  stroke(10);
-  line(x1, yNoisy1, x2, yNoisy2);
-  noStroke();
-  fill(textBgColor);
-  rect(0, 0, width, textBgHeight );
-  fill(255);
-  text( "Noisy signal", 10, 20 );
-  popMatrix();
-
-  // Draw filtered signal
-  pushMatrix();
-  translate(0, sectionSize * 2.0);
-  noStroke();
-  float yFiltered1 = map(rightHandYFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
-  float yFiltered2 = map(rightHandYFiltered, 0.0, 1.0, textBgHeight, sectionSize);
-  stroke(255);
-  line(x1, yFiltered1, x2, yFiltered2);
-  rightHandYSlope = yFiltered2 - yFiltered1;
-  if (rightHandYSlopePrev > 0) {
-  	if (rightHandYSlope <= 0) {
-  		rightHandYDownBeatX = x2;
-  		rightHandYDownBeatY = yFiltered2;
-  		bpm = 60/(abs(rightHandYDownBeatXPrev-rightHandYDownBeatX)*(1/frameRate));
-  		dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev)/2, 0, sectionSize-textBgHeight, 0, 1);
-  		rightHandYDownBeatXPrev = rightHandYDownBeatX;
-  		rightHandYDownBeatYPrev = rightHandYDownBeatY;
-  		ellipse(x2, yFiltered2, 50*dynamics, 50*dynamics);
-
-  	}
-  }
-  if (rightHandYSlopePrev < 0) {
-  	if (rightHandYSlope >= 0) {
-  		fill(10);
-  		ellipse(x2, yFiltered2, 10, 10);
-  		fill(255);
-  		rightHandYUpBeatX = x2;
-  		rightHandYUpBeatY = yFiltered2;
-  		rightHandYUpBeatXPrev = rightHandYUpBeatX;
-  		rightHandYUpBeatYPrev = rightHandYUpBeatY;
-  	}
-  }
-
-
-  rightHandYSlopePrev = rightHandYSlope;
-  noStroke();
-  fill(textBgColor);
-  rect(0, 0, width, textBgHeight );
-  fill(255);
-  text( "Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics, 10, 20 );
-
-  popMatrix();
-
-  pushMatrix();
-  translate(0, sectionSize * 0);
-  noStroke();
-  fill(255);
-  float zNoisy1 = map(rightHandZPrev, 0.0, 1.0, textBgHeight, sectionSize);
-  float zNoisy2 = map(rightHandZ, 0.0, 1.0, textBgHeight, sectionSize);
-  stroke(10);
-  line(x1, zNoisy1, x2, zNoisy2);
-  noStroke();
-  fill(textBgColor);
-  rect(0, 0, width, textBgHeight );
-  fill(255);
-  text( "Noisy signal", 10, 20 );
-  popMatrix();
-
-
-// Draw filtered signal
-  pushMatrix();
-  translate(0, sectionSize * 0);
-  noStroke();
-  float zFiltered1 = map(rightHandZFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
-  float zFiltered2 = map(rightHandZFiltered, 0.0, 1.0, textBgHeight, sectionSize);
-  stroke(255);
-  line(x1, zFiltered1, x2, zFiltered2);
-
-  noStroke();
-  fill(textBgColor);
-  rect(0, 0, width, textBgHeight );
-  fill(255);
-
-  weighting = map (zFiltered2, 0,100, 0, 1);
-  text( "Z-Position\tweighting: " + weighting, 10, 20 );
-
+  drawWeightingSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
 
 
@@ -438,19 +248,206 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
     if (leftHandXUpBeatXPrev > 0) {
     	leftHandXUpBeatXPrev -= width;
     }
-
-
-
-
-
 }
   sendOSCMessages();
 }
 
+void drawWeightingSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
+  println("sectionSize: "+sectionSize);
+
+  noStroke();
+  fill(255);
+  float zNoisy1 = map(rightHandZPrev, 0.0, 1.0, textBgHeight, sectionSize);
+  float zNoisy2 = map(rightHandZ, 0.0, 1.0, textBgHeight, sectionSize);
+  stroke(10);
+  line(x1, zNoisy1, x2, zNoisy2);
+  noStroke();
+  fill(textBgColor);
+  rect(0, 0, width, textBgHeight );
+  fill(255);
+  text( "Noisy signal", 10, 20 );
+  noStroke();
+  float zFiltered1 = map(rightHandZFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
+  float zFiltered2 = map(rightHandZFiltered, 0.0, 1.0, textBgHeight, sectionSize);
+  stroke(255);
+  line(x1, zFiltered1, x2, zFiltered2);
+
+  noStroke();
+  fill(textBgColor);
+  rect(0, 0, width, textBgHeight );
+  fill(255);
+
+  weighting = map (zFiltered2, 0,100, 0, 1);
+  text( "Z-Position\tweighting: " + weighting, 10, 20 );
+}
+
+void drawRegistrationSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
+  noStroke();
+  fill(255);
+  float xNoisy1 = map(rightHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);
+  float xNoisy2 = map(rightHandX, 0.0, 1.0, textBgHeight, sectionSize);
+  stroke(10);
+  line(x1, xNoisy1, x2, xNoisy2);
+  xNoisy1 = map(leftHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);  
+  xNoisy2 = map(leftHandX, 0.0, 1.0, textBgHeight, sectionSize);
+  line(x1, xNoisy1, x2, xNoisy2);
+
+  noStroke();
+  float xFiltered1 = map(rightHandXFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
+  float xFiltered2 = map(rightHandXFiltered, 0.0, 1.0, textBgHeight, sectionSize);
+  stroke(255);
+  line(x1, xFiltered1, x2, xFiltered2);
+
+
+  rightHandXSlope = xFiltered2 - xFiltered1;
+  if (rightHandXSlopePrev > 0) {
+    if (rightHandXSlope <= 0) {
+      
+      ellipse(x2, xFiltered2, 10,10);
+      rightHandXDownBeatX = x2;
+      rightHandXDownBeatY = xFiltered2;
+      rightHandXDownBeatXPrev = rightHandXDownBeatX;
+      rightHandXDownBeatYPrev = rightHandXDownBeatY;
+      
+    }
+  }
+  if (rightHandXSlopePrev < 0) {
+    if (rightHandXSlope >= 0) {
+      fill(10);
+      ellipse(x2, xFiltered2, 10, 10);
+      fill(255);
+      rightHandXUpBeatX = x2;
+      rightHandXUpBeatY = xFiltered2;
+      rightHandXUpBeatXPrev = rightHandXUpBeatX;
+      rightHandXUpBeatYPrev = rightHandXUpBeatY;
+    }
+  }
+
+  rightHandXSlopePrev = rightHandXSlope;
+
+
+
+  xFiltered1 = map(leftHandXFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
+  xFiltered2 = map(leftHandXFiltered, 0.0, 1.0, textBgHeight, sectionSize);
+  line(x1, xFiltered1, x2, xFiltered2);
+
+  leftHandXSlope = xFiltered2 - xFiltered1;
+  if (leftHandXSlopePrev > 0) {
+    if (leftHandXSlope <= 0) {
+      ellipse(x2, xFiltered2, 10,10);
+      leftHandXDownBeatX = x2;
+      leftHandXDownBeatY = xFiltered2;
+      leftHandXDownBeatXPrev = leftHandXDownBeatX;
+      leftHandXDownBeatYPrev = leftHandXDownBeatY;
+      
+    }
+  }
+  if (leftHandXSlopePrev < 0) {
+    if (leftHandXSlope >= 0) {
+      fill(10);
+      ellipse(x2, xFiltered2, 10, 10);
+      fill(255);
+      leftHandXUpBeatX = x2;
+      leftHandXUpBeatY = xFiltered2;
+      leftHandXUpBeatXPrev = leftHandXUpBeatX;
+      leftHandXUpBeatYPrev = leftHandXUpBeatY;
+    }
+  }
+
+  leftHandXSlopePrev = leftHandXSlope;
+
+  stroke(255,100,0, 100);
+
+
+
+  registration = dist(x2, rightHandXUpBeatY, x2, leftHandXDownBeatY);
+
+//  line(x2, rightHandXUpBeatY, x2, leftHandXDownBeatY);
+//  line(x2, sectionSize/2 - 0.5 * registration, x2, sectionSize/2 + 0.5 * registration); 
+
+  registration = map(registration, 0, 500, 0, 1);
+
+
+
+
+
+  noStroke();
+  fill(textBgColor);
+  rect(0, 0, width, textBgHeight );
+  fill(255);
+  text( "X-Position\tregistration:" + registration, 10, 20 );
+}
+void drawDynamicsSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
+
+
+  //------------------------------------
+  // Draw noisy signal
+  noStroke();
+  fill(255);
+  float yNoisy1 = map(rightHandYPrev, 0.0, 1.0, textBgHeight, sectionSize);
+  float yNoisy2 = map(rightHandY, 0.0, 1.0, textBgHeight, sectionSize);
+  stroke(10);
+  line(x1, yNoisy1, x2, yNoisy2);
+  noStroke();
+  fill(textBgColor);
+  rect(0, 0, width, textBgHeight );
+  fill(255);
+  text( "Noisy signal", 10, 20 );
+
+  // Draw filtered signal
+
+  noStroke();
+  float yFiltered1 = map(rightHandYFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
+  float yFiltered2 = map(rightHandYFiltered, 0.0, 1.0, textBgHeight, sectionSize);
+  stroke(255);
+  line(x1, yFiltered1, x2, yFiltered2);
+  rightHandYSlope = yFiltered2 - yFiltered1;
+  
+  //downbeat
+  if (rightHandYSlopePrev > 0) {
+    if (rightHandYSlope <= 0) {
+      rightHandYDownBeatX = x2;
+      rightHandYDownBeatY = yFiltered2;
+      bpm = 60/(abs(rightHandYDownBeatXPrev-rightHandYDownBeatX)*(1/frameRate));
+      dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev), 0, sectionSize-textBgHeight, 0, 1);
+      sendOSCMessage("/hyperconductor/bpm", bpm);
+      sendOSCMessage("/hyperconductor/dynamics", dynamics);
+      rightHandYDownBeatXPrev = rightHandYDownBeatX;
+      rightHandYDownBeatYPrev = rightHandYDownBeatY;
+      ellipse(x2, yFiltered2, 50*dynamics, 50*dynamics);
+    }
+  }
+
+  // upbeat
+  if (rightHandYSlopePrev < 0) {
+    if (rightHandYSlope >= 0) {
+      fill(10);
+      ellipse(x2, yFiltered2, 10, 10);
+      fill(255);
+      rightHandYUpBeatX = x2;
+      rightHandYUpBeatY = yFiltered2;
+      rightHandYUpBeatXPrev = rightHandYUpBeatX;
+      rightHandYUpBeatYPrev = rightHandYUpBeatY;
+    }
+  }
+
+
+  rightHandYSlopePrev = rightHandYSlope;
+  noStroke();
+  fill(textBgColor);
+  rect(0, 0, width, textBgHeight );
+  fill(255);
+  text( "Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics, 10, 20 );
+}
+
+
+
+
 void sendOSCMessages() {
-  sendOSCMessage("/hyperconductor/dynamics", dynamics);
   sendOSCMessage("/hyperconductor/registration", registration);
   sendOSCMessage("/hyperconductor/weighting", weighting);
+  sendOSCMessage("/hyperconductor/articulation", articulation);
+
 }
 
 void sendOSCMessage(String route, float value) {
