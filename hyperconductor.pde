@@ -7,6 +7,8 @@ import netP5.*;
 OscP5 oscP5;
 NetAddress myRemoteLocation;
 
+TuningStatus tuningStatus = TuningStatus.NONE;
+
 // -----------------------------------------------------
 // Create the filter
 SignalFilter rightHandYFilter;
@@ -54,6 +56,11 @@ float rightHandYSlope, rightHandYSlopePrev = 0;
 float rightHandXSlope, rightHandXSlopePrev = 0;
 float leftHandXSlope, leftHandXSlopePrev = 0;
 
+float[] dynamicsRange = new float[2];
+float[] articulatonRange = new float[2];
+float[] weightingRange = new float[2];
+
+
 float bpm = 0;
 float dynamics = 0;
 float registration = 0;
@@ -63,10 +70,12 @@ LeapMotion leap;
 
 void setup(){
     //size(800, 500, OPENGL);
-    size(512,512);
+    size(1024,680);
     background(180);
     sectionSize = height / 3.0;
-
+    dynamicsRange = new float[]{textBgHeight, sectionSize};
+    articulatonRange = new float[]{0,64};
+    weightingRange = new float[]{textBgHeight, sectionSize};
     oscP5 = new OscP5(this,12001);
     myRemoteLocation = new NetAddress("127.0.0.1",12002);
 
@@ -109,13 +118,12 @@ void draw(){
 
     leftHand.drawSphere();
     rightHand.drawSphere();
-    float leftHandX = map(leftHand.getPosition().x, 0, 500, 0,1);
+    float leftHandX = map(leftHand.getPosition().x, -300, 1200, 0,1);
     float leftHandY = map(leftHand.getPosition().y, 0, 500, 0,1);
     float leftHandZ = map(leftHand.getPosition().z, 0, 100, 0,1);
-    float rightHandX = map(rightHand.getPosition().x, 0, 500, 0, 1);
+    float rightHandX = map(rightHand.getPosition().x, -300, 1200, 0, 1);
     float rightHandY = map(rightHand.getPosition().y, 0, 500, 0,1);
     float rightHandZ = map(rightHand.getPosition().z, 0, 100, 0,1);
-    
 
     drawSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
 
@@ -147,12 +155,51 @@ void leapOnExit(){
 
 
 
+void tune() {
 
+
+}
 
 void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ)
 {
 
+  tune();
+  if (keyPressed) {
+    if (key == '0') {
+      tuningStatus = TuningStatus.NONE;
+    }
+    if (key == '1') {
+      tuningStatus = TuningStatus.DYNAMICS;
+    }
+    if (key == '2') {
+      tuningStatus = TuningStatus.WEIGHTING;
+    }
+    if (key == '3') {
+      tuningStatus = TuningStatus.ARTICULATION;
+    }
+    if (key == 'q') {
+      if (tuningStatus == TuningStatus.DYNAMICS) {
+        dynamicsRange[0] -= 1;
+      } 
+    }
 
+    if (key == 'w') {
+      if (tuningStatus == TuningStatus.DYNAMICS) {
+        dynamicsRange[0] += 1;
+      } 
+    }
+    if (key == 'a') {
+      if (tuningStatus == TuningStatus.DYNAMICS) {
+        dynamicsRange[1] -= 1;
+      } 
+    }
+    if (key == 's') {
+      if (tuningStatus == TuningStatus.DYNAMICS) {
+        dynamicsRange[1] += 1;
+      } 
+    }
+
+  }
   // Pass the parameters to the filter
   rightHandYFilter.setMinCutoff(minCutoff);
   rightHandYFilter.setBeta(beta);
@@ -253,7 +300,6 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
 }
 
 void drawZSignals(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
-  println("sectionSize: "+sectionSize);
 
   noStroke();
   fill(255);
@@ -302,8 +348,8 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   rightHandXSlope = xFiltered2 - xFiltered1;
   if (rightHandXSlopePrev > 0) {
     if (rightHandXSlope <= 0) {
-      articulation = map(abs(rightHandXDownBeatY - rightHandXUpBeatYPrev), 0, sectionSize-textBgHeight, 0, 1);
-      
+      articulation = map(abs(rightHandXDownBeatY - rightHandXUpBeatYPrev), 0, abs(articulatonRange[0]-articulatonRange[1]), 0, 1);
+      sendOSCMessage("/hyperconductor/articulation", articulation);
       ellipse(x2, xFiltered2, 10,10);
       rightHandXDownBeatX = x2;
       rightHandXDownBeatY = xFiltered2;
@@ -376,10 +422,17 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   fill(textBgColor);
   rect(0, 0, width, textBgHeight );
   fill(255);
-  text( "X-Position\tregistration:" + registration + " articulation: " + articulation, 10, 20 );
+  text( "X-Position\tregistration:" + registration + " articulation: " + articulation + " rawLeftX: " + leap.getLeftHand().getPosition().x + " rawRightX: " + leap.getRightHand().getPosition().x, 10, 20 );
 }
 void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
+  if(tuningStatus == TuningStatus.DYNAMICS) {
+    fill(255,0,0);
+    stroke(255,0,0);
+    //rect(0, 0, width, sectionSize-textBgHeight);
+    line(0, dynamicsRange[0], width, dynamicsRange[0]);
+    line(0, dynamicsRange[1], width, dynamicsRange[1]);
 
+  }
 
   //------------------------------------
   // Draw noisy signal
@@ -410,7 +463,7 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
       rightHandYDownBeatX = x2;
       rightHandYDownBeatY = yFiltered2;
       bpm = 60/(abs(rightHandYDownBeatXPrev-rightHandYDownBeatX)*(1/frameRate));
-      dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev), 0, sectionSize-textBgHeight, 0, 1);
+      dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev), 0, abs(dynamicsRange[0]-dynamicsRange[1]), 0, 1);
       sendOSCMessage("/hyperconductor/bpm", bpm);
       sendOSCMessage("/hyperconductor/dynamics", dynamics);
       rightHandYDownBeatXPrev = rightHandYDownBeatX;
@@ -438,7 +491,9 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   fill(textBgColor);
   rect(0, 0, width, textBgHeight );
   fill(255);
-  text( "Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics, 10, 20 );
+  String range = "dynamicsRange = {" + dynamicsRange[0] + "," +dynamicsRange[1]+"}";
+
+  text( "Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics + " " + range, 10, 20);
 }
 
 
@@ -447,7 +502,6 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
 void sendOSCMessages() {
   sendOSCMessage("/hyperconductor/registration", registration);
   sendOSCMessage("/hyperconductor/weighting", weighting);
-  sendOSCMessage("/hyperconductor/articulation", articulation);
 
 }
 
