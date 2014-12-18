@@ -220,6 +220,8 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
   rightHandXSlope = xFiltered2 - xFiltered1;
   if (rightHandXSlopePrev > 0) {
   	if (rightHandXSlope <= 0) {
+      sendOSCMessage("/hyperconductor/bpm", bpm);
+      
   		ellipse(x2, xFiltered2, 10,10);
   		rightHandXDownBeatX = x2;
   		rightHandXDownBeatY = xFiltered2;
@@ -339,7 +341,7 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
   		rightHandYDownBeatX = x2;
   		rightHandYDownBeatY = yFiltered2;
   		bpm = 60/(abs(rightHandYDownBeatXPrev-rightHandYDownBeatX)*(1/frameRate));
-  		dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev), 0, sectionSize-textBgHeight, 0, 1);
+  		dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev)/2, 0, sectionSize-textBgHeight, 0, 1);
   		rightHandYDownBeatXPrev = rightHandYDownBeatX;
   		rightHandYDownBeatYPrev = rightHandYDownBeatY;
   		ellipse(x2, yFiltered2, 50*dynamics, 50*dynamics);
@@ -446,22 +448,13 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
 }
 
 void sendOSCMessages() {
-  OscMessage oscMessageBpm = new OscMessage("/hyperconductor/bpm");
-  oscMessageBpm.add(bpm);
-  oscP5.send(oscMessageBpm, myRemoteLocation);
+  sendOSCMessage("/hyperconductor/dynamics", dynamics);
+  sendOSCMessage("/hyperconductor/registration", registration);
+  sendOSCMessage("/hyperconductor/weighting", weighting);
+}
 
-  OscMessage oscMessageDynamics = new OscMessage("/hyperconductor/dynamics");
-  oscMessageDynamics.add(dynamics);
-  oscP5.send(oscMessageDynamics, myRemoteLocation);
-
-  OscMessage oscMessageRegistration = new OscMessage("/hyperconductor/registration");
-  oscMessageRegistration.add(registration);
-  oscP5.send(oscMessageRegistration, myRemoteLocation);
-
-  OscMessage oscMessageWeighting = new OscMessage("/hyperconductor/weighting");
-  oscMessageWeighting.add(weighting);
-  oscP5.send(oscMessageWeighting, myRemoteLocation);
-
-
-
+void sendOSCMessage(String route, float value) {
+  OscMessage oscMessage = new OscMessage(route);
+  oscMessage.add(value);
+  oscP5.send(oscMessage, myRemoteLocation);
 }
