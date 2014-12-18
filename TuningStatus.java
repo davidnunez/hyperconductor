@@ -1,0 +1,3 @@
+enum TuningStatus {
+  NONE, ARTICULATION, DYNAMICS, WEIGHTING;
+}
