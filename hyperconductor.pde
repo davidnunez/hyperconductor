@@ -8,7 +8,7 @@ OscP5 oscP5;
 NetAddress myRemoteLocation;
 
 TuningStatus tuningStatus = TuningStatus.NONE;
-
+boolean  NAIVEMODE = false;
 // -----------------------------------------------------
 // Create the filter
 SignalFilter rightHandYFilter;
@@ -77,7 +77,7 @@ void setup(){
     articulatonRange = new float[]{0,64};
     weightingRange = new float[]{textBgHeight, sectionSize};
     oscP5 = new OscP5(this,12001);
-    myRemoteLocation = new NetAddress("127.0.0.1",12002);
+    myRemoteLocation = new NetAddress("192.168.1.247",12002);
 
     // ...
     rightHandYFilter = new SignalFilter(this);
@@ -125,13 +125,26 @@ void draw(){
     float rightHandY = map(rightHand.getPosition().y, 0, 500, 0,1);
     float rightHandZ = map(rightHand.getPosition().z, 0, 100, 0,1);
 
-    drawSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+    if (!NAIVEMODE) {
+      drawSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+    } else {
+      background(180); // clear screen
 
+      float soloDynamics = map(abs(leftHandX-rightHandX), 0, 1, 0, 1);
+      float soloTimbre   = map(abs(leftHandY-rightHandY), 0, 1, 0, 1);
+      float soloVibrato  = map(abs(leftHandZ-rightHandZ), 0, 1, 0, 1);
+      text( "dynamics: " + soloDynamics + " \ntimbre: " + soloTimbre + "\nvibrato: " + soloVibrato, 10, 20);
+      sendOSCMessage("/hyperconductor2/dynamics", soloDynamics);
+      sendOSCMessage("/hyperconductor2/timbre", soloTimbre);
+      sendOSCMessage("/hyperconductor2/vibrato", soloVibrato);
 
+      
+    }
 //    drawSignal(map(handY,0,500,0,1), map(handY, 0,500,0,1));
 } catch (Exception e) {
 	System.out.println(e.toString());
 }
+    tune();
 
 }
 
@@ -156,14 +169,6 @@ void leapOnExit(){
 
 
 void tune() {
-
-
-}
-
-void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ)
-{
-
-  tune();
   if (keyPressed) {
     if (key == '0') {
       tuningStatus = TuningStatus.NONE;
@@ -198,8 +203,20 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
         dynamicsRange[1] += 1;
       } 
     }
-
+    if (key == 'n') {
+      NAIVEMODE = true;
+      println("NAIVEMODE: "+ NAIVEMODE);
+    }
+    if (key == 'm') {
+      NAIVEMODE = false;
+      println("NAIVEMODE: "+ NAIVEMODE);
+    }
   }
+
+}
+
+void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ)
+{
   // Pass the parameters to the filter
   rightHandYFilter.setMinCutoff(minCutoff);
   rightHandYFilter.setBeta(beta);
