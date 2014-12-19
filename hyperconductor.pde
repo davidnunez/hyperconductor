@@ -5,7 +5,8 @@ import oscP5.*;
 import netP5.*;
 
 OscP5 oscP5;
-NetAddress myRemoteLocation;
+NetAddress myRemoteLocationMax;
+NetAddress myRemoteLocationVisualization;
 
 TuningStatus tuningStatus = TuningStatus.NONE;
 boolean  NAIVEMODE = false;
@@ -71,17 +72,18 @@ LeapMotion leap;
 
 int beatCount = 0;
 boolean started = false;
-
+boolean drawDownbeat = false;
 void setup(){
     //size(800, 500, OPENGL);
     size(1024,680);
     background(180);
-    sectionSize = height / 3.0;
+    sectionSize = height / 2.0;
     dynamicsRange = new float[]{textBgHeight, sectionSize};
     articulatonRange = new float[]{0,64};
     weightingRange = new float[]{textBgHeight, sectionSize};
     oscP5 = new OscP5(this,12001);
-    myRemoteLocation = new NetAddress("192.168.1.247",12002);
+    myRemoteLocationMax = new NetAddress("192.168.1.247",12002);
+    myRemoteLocationVisualization = new NetAddress("127.0.0.1",12001);
 
     // ...
     rightHandYFilter = new SignalFilter(this);
@@ -130,20 +132,21 @@ void draw(){
     float rightHandY = map(rightHand.getPosition().y, 0, 500, 0,1);
     float rightHandZ = map(rightHand.getPosition().z, 0, 100, 0,1);
 
-    if (!NAIVEMODE) {
-      drawSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
-    } else {
-      background(180); // clear screen
+    drawSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+    if (NAIVEMODE) {
       soloDynamics = map(leftHand.getPosition().dist(rightHand.getPosition()), 0, 1000, 0, 2);
       soloTimbre = map(rightHandY, 0,1,1,0);
       soloVibrato  = map(abs(leftHandZ-rightHandZ), 0, 1, 0, 1);
-      float soloVibrato = rightHandZ;
-      text( "dynamics: " + soloDynamics + " \ntimbre: " + soloTimbre + "\nvibrato: " + soloVibrato, 10, 20);
       sendOSCMessage("/hyperconductor2/dynamics", soloDynamics);
       sendOSCMessage("/hyperconductor2/timbre", soloTimbre);
       sendOSCMessage("/hyperconductor2/vibrato", soloVibrato);
+    } else {
 
-      
+      sendOSCMessage("/hyperconductor/articulation", articulation);
+      sendOSCMessage("/hyperconductor/bpm", bpm);
+      sendOSCMessage("/hyperconductor/dynamics", dynamics);
+      // sendOSCMessage("/hyperconductor/registration", registration, myRemoteLocationMax);
+      // sendOSCMessage("/hyperconductor/weighting", weighting, myRemoteLocationMax);
     }
 //    drawSignal(map(handY,0,500,0,1), map(handY, 0,500,0,1));
 } catch (Exception e) {
@@ -271,22 +274,26 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
   //------------------------------------
   // Draw X signals
   pushMatrix();
-  translate(0, sectionSize * 1);
+  translate(0, sectionSize * 0);
   drawYSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
 
 
   pushMatrix();
-  translate(0, sectionSize * 0);
+  translate(0, sectionSize * 1);
   drawXSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
 
-
-
   pushMatrix();
-  translate(0, sectionSize * 2);
-  drawZSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+  translate(0, sectionSize * 1);
+  drawSoloist();
   popMatrix();
+
+
+  // pushMatrix();
+  // translate(0, sectionSize * 2);
+  // drawZSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+  // popMatrix();
 
 
 
@@ -359,24 +366,25 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   float xNoisy1 = map(rightHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);
   float xNoisy2 = map(rightHandX, 0.0, 1.0, textBgHeight, sectionSize);
   stroke(10);
-  line(x1, xNoisy1, x2, xNoisy2);
+//  line(x1, xNoisy1, x2, xNoisy2);
   xNoisy1 = map(leftHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);  
   xNoisy2 = map(leftHandX, 0.0, 1.0, textBgHeight, sectionSize);
-  line(x1, xNoisy1, x2, xNoisy2);
+//  line(x1, xNoisy1, x2, xNoisy2);
 
   noStroke();
   float xFiltered1 = map(rightHandXFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
   float xFiltered2 = map(rightHandXFiltered, 0.0, 1.0, textBgHeight, sectionSize);
   stroke(255);
-  line(x1, xFiltered1, x2, xFiltered2);
+//  line(x1, xFiltered1, x2, xFiltered2);
 
 
   rightHandXSlope = xFiltered2 - xFiltered1;
   if (rightHandXSlopePrev > 0) {
     if (rightHandXSlope <= 0) {
-      articulation = map(abs(rightHandXDownBeatY - rightHandXUpBeatYPrev), 0, abs(articulatonRange[0]-articulatonRange[1]), 0, 1);
-      sendOSCMessage("/hyperconductor/articulation", articulation);
-      ellipse(x2, xFiltered2, 10,10);
+      if (!NAIVEMODE) {
+        articulation = map(abs(rightHandXDownBeatY - rightHandXUpBeatYPrev), 0, abs(articulatonRange[0]-articulatonRange[1]), 0, 1);
+      }
+ //     ellipse(x2, xFiltered2, 10,10);
       rightHandXDownBeatX = x2;
       rightHandXDownBeatY = xFiltered2;
       rightHandXDownBeatXPrev = rightHandXDownBeatX;
@@ -387,7 +395,7 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   if (rightHandXSlopePrev < 0) {
     if (rightHandXSlope >= 0) {
       fill(10);
-      ellipse(x2, xFiltered2, 10, 10);
+  //    ellipse(x2, xFiltered2, 10, 10);
       fill(255);
       rightHandXUpBeatX = x2;
       rightHandXUpBeatY = xFiltered2;
@@ -402,12 +410,12 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
 
   xFiltered1 = map(leftHandXFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
   xFiltered2 = map(leftHandXFiltered, 0.0, 1.0, textBgHeight, sectionSize);
-  line(x1, xFiltered1, x2, xFiltered2);
+  //line(x1, xFiltered1, x2, xFiltered2);
 
   leftHandXSlope = xFiltered2 - xFiltered1;
   if (leftHandXSlopePrev > 0) {
     if (leftHandXSlope <= 0) {
-      ellipse(x2, xFiltered2, 10,10);
+    //  ellipse(x2, xFiltered2, 10,10);
       leftHandXDownBeatX = x2;
       leftHandXDownBeatY = xFiltered2;
       leftHandXDownBeatXPrev = leftHandXDownBeatX;
@@ -418,7 +426,7 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   if (leftHandXSlopePrev < 0) {
     if (leftHandXSlope >= 0) {
       fill(10);
-      ellipse(x2, xFiltered2, 10, 10);
+      //ellipse(x2, xFiltered2, 10, 10);
       fill(255);
       leftHandXUpBeatX = x2;
       leftHandXUpBeatY = xFiltered2;
@@ -446,9 +454,9 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
 
   noStroke();
   fill(textBgColor);
-  rect(0, 0, width, textBgHeight );
+//  rect(0, 0, width, textBgHeight );
   fill(255);
-  text( "X-Position\tregistration:" + registration + " articulation: " + articulation + " rawLeftX: " + leap.getLeftHand().getPosition().x + " rawRightX: " + leap.getRightHand().getPosition().x, 10, 20 );
+//  text( "X-Position\tregistration:" + registration + " articulation: " + articulation + " rawLeftX: " + leap.getLeftHand().getPosition().x + " rawRightX: " + leap.getRightHand().getPosition().x, 10, 20 );
 }
 void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
   if(tuningStatus == TuningStatus.DYNAMICS) {
@@ -467,7 +475,9 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   float yNoisy1 = map(rightHandYPrev, 0.0, 1.0, textBgHeight, sectionSize);
   float yNoisy2 = map(rightHandY, 0.0, 1.0, textBgHeight, sectionSize);
   stroke(10);
-  line(x1, yNoisy1, x2, yNoisy2);
+  if (!NAIVEMODE) {
+    line(x1, yNoisy1, x2, yNoisy2);
+  }
   noStroke();
   fill(textBgColor);
   rect(0, 0, width, textBgHeight );
@@ -480,7 +490,9 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   float yFiltered1 = map(rightHandYFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
   float yFiltered2 = map(rightHandYFiltered, 0.0, 1.0, textBgHeight, sectionSize);
   stroke(255);
-  line(x1, yFiltered1, x2, yFiltered2);
+  if (!NAIVEMODE) {
+    line(x1, yFiltered1, x2, yFiltered2);
+  }
   rightHandYSlope = yFiltered2 - yFiltered1;
   
   //downbeat
@@ -488,20 +500,30 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
     if (rightHandYSlope <= 0) {
       rightHandYDownBeatX = x2;
       rightHandYDownBeatY = yFiltered2;
-      bpm = 60/(abs(rightHandYDownBeatXPrev-rightHandYDownBeatX)*(1/frameRate));
-      dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev), 0, abs(dynamicsRange[0]-dynamicsRange[1]), 0, 1);
-      sendOSCMessage("/hyperconductor/bpm", bpm);
-      sendOSCMessage("/hyperconductor/dynamics", dynamics);
+      if (!NAIVEMODE) {
+        bpm = 60/(abs(rightHandYDownBeatXPrev-rightHandYDownBeatX)*(1/frameRate));
+        dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev), 0, abs(dynamicsRange[0]-dynamicsRange[1]), 0, 1);
+      }
       if(started) {
         beatCount += 1;
-        if (beatCount == 4){
+        if (beatCount == 5){
           sendOSCMessage("/hyperconductor/started", 1);
           println("started: "+started);
         }
       }
       rightHandYDownBeatXPrev = rightHandYDownBeatX;
       rightHandYDownBeatYPrev = rightHandYDownBeatY;
-      ellipse(x2, yFiltered2, 50*dynamics, 50*dynamics);
+      if (!NAIVEMODE) {
+        ellipse(x2, yFiltered2, 50*dynamics, 50*dynamics);
+      }
+      stroke(180);
+      strokeWeight(10);  // Beastly
+      //line(0, (sectionSize-textBgHeight)/2, width, (sectionSize-textBgHeight)/2);
+      line(0, textBgHeight+5, width, textBgHeight+5);
+      stroke(0, 0, 200, 100);
+      dashline(0, textBgHeight+5, width, textBgHeight+5, new float[] {20*articulation,20});
+      //dashline(0, (sectionSize-textBgHeight)/2, x2, (sectionSize-textBgHeight)/2, new float[] {5,5});
+      strokeWeight(1);
     }
   }
 
@@ -509,7 +531,9 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   if (rightHandYSlopePrev < 0) {
     if (rightHandYSlope >= 0) {
       fill(10);
-      ellipse(x2, yFiltered2, 10, 10);
+      if (!NAIVEMODE) {
+        ellipse(x2, yFiltered2, 10, 10);
+      }
       fill(255);
       rightHandYUpBeatX = x2;
       rightHandYUpBeatY = yFiltered2;
@@ -518,6 +542,10 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
     }
   }
 
+  if (drawDownbeat) {
+    ellipse(x2, (sectionSize-textBgHeight)/2, 50*dynamics, 50*dynamics);
+
+  }
 
   rightHandYSlopePrev = rightHandYSlope;
   noStroke();
@@ -526,9 +554,25 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   fill(255);
   String range = "dynamicsRange = {" + dynamicsRange[0] + "," +dynamicsRange[1]+"}";
 
-  text("Started: " + started + " beatCount: " + beatCount + " Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics +  " " + range, 10, 20);
+  text("Started: " + started + " beatCount: " + beatCount + " Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics +  " articulation: " + articulation, 10, 20);
 }
 
+
+void drawSoloist() {
+
+
+  stroke(0, 30, 100, (int)(255*soloTimbre));
+  line(x2, sectionSize, x2, map(soloDynamics, 0, 3, sectionSize, sectionSize/2+textBgHeight));
+
+  noStroke();
+  fill(textBgColor);
+  rect(0, sectionSize/2, width, textBgHeight );
+  fill(255);
+
+  text("SOLOIST\tsoloDynamics: " + soloDynamics + "\tsoloVibrato: " + soloVibrato + "\tsoloTimbre: " + soloTimbre, 10, sectionSize/2 + 20);
+
+
+}
 void leapOnKeyTapGesture(KeyTapGesture g){
     int     id                  = g.getId();
     Finger  finger              = g.getFinger();
@@ -543,16 +587,89 @@ void leapOnKeyTapGesture(KeyTapGesture g){
     }
 }
 
-
+void dashline(float x0, float y0, float x1, float y1, float[ ] spacing) 
+{ 
+  float distance = dist(x0, y0, x1, y1); 
+  float [ ] xSpacing = new float[spacing.length]; 
+  float [ ] ySpacing = new float[spacing.length]; 
+  float drawn = 0.0;  // amount of distance drawn 
+ 
+  if (distance > 0) 
+  { 
+    int i; 
+    boolean drawLine = true; // alternate between dashes and gaps 
+ 
+    /* 
+      Figure out x and y distances for each of the spacing values 
+      I decided to trade memory for time; I'd rather allocate 
+      a few dozen bytes than have to do a calculation every time 
+      I draw. 
+    */ 
+    for (i = 0; i < spacing.length; i++) 
+    { 
+      xSpacing[i] = lerp(0, (x1 - x0), spacing[i] / distance); 
+      ySpacing[i] = lerp(0, (y1 - y0), spacing[i] / distance); 
+    } 
+ 
+    i = 0; 
+    while (drawn < distance) 
+    { 
+      if (drawLine) 
+      { 
+        line(x0, y0, x0 + xSpacing[i], y0 + ySpacing[i]); 
+      } 
+      x0 += xSpacing[i]; 
+      y0 += ySpacing[i]; 
+      /* Add distance "drawn" by this line or gap */ 
+      drawn = drawn + mag(xSpacing[i], ySpacing[i]); 
+      i = (i + 1) % spacing.length;  // cycle through array 
+      drawLine = !drawLine;  // switch between dash and gap 
+    } 
+  } 
+} 
+ 
 
 void sendOSCMessages() {
-  sendOSCMessage("/hyperconductor/registration", registration);
-  sendOSCMessage("/hyperconductor/weighting", weighting);
 
 }
 
 void sendOSCMessage(String route, float value) {
   OscMessage oscMessage = new OscMessage(route);
   oscMessage.add(value);
-  oscP5.send(oscMessage, myRemoteLocation);
+  oscP5.send(oscMessage, myRemoteLocationMax);
+  oscP5.send(oscMessage, myRemoteLocationVisualization);
+}
+
+void oscEvent(OscMessage theOscMessage) {
+  /* print the address pattern and the typetag of the received OscMessage */
+  //print("### received an osc message.");
+  //print(" addrpattern: "+theOscMessage.addrPattern());
+  if (theOscMessage.addrPattern().equals("/hyperconductor2/dynamics")) {
+      soloDynamics = theOscMessage.get(0).floatValue();
+  }
+  if (theOscMessage.addrPattern().equals("/hyperconductor2/vibrato")) {
+      soloVibrato = theOscMessage.get(0).floatValue();
+  }
+  if (theOscMessage.addrPattern().equals("/hyperconductor2/timbre")) {
+      soloTimbre = theOscMessage.get(0).floatValue();
+  }
+  if (theOscMessage.addrPattern().equals("/hyperconductor/articulation")) {
+      articulation = theOscMessage.get(0).floatValue();
+  }
+  if (theOscMessage.addrPattern().equals("/hyperconductor/bpm")) {
+      bpm = theOscMessage.get(0).floatValue();
+  }
+  if (theOscMessage.addrPattern().equals("/hyperconductor/dynamics")) {
+      dynamics = theOscMessage.get(0).floatValue();
+  }
+
+  if (theOscMessage.addrPattern().equals("/hyperconductor/downbeat")) {
+      drawDownbeat = false;
+  }
+
+
+
+
+
+
 }
