@@ -68,6 +68,9 @@ float weighting = 0;
 float articulation = 0;
 LeapMotion leap;
 
+int beatCount = 0;
+boolean started = false;
+
 void setup(){
     //size(800, 500, OPENGL);
     size(1024,680);
@@ -84,7 +87,8 @@ void setup(){
     rightHandZFilter = new SignalFilter(this);
     rightHandXFilter = new SignalFilter(this);
     leftHandXFilter = new SignalFilter(this);
-    leap = new LeapMotion(this);
+    //leap = new LeapMotion(this);
+    leap = new LeapMotion(this).withGestures("key_tap");
 }
 
 void draw(){
@@ -210,6 +214,10 @@ void tune() {
     if (key == 'm') {
       NAIVEMODE = false;
       println("NAIVEMODE: "+ NAIVEMODE);
+    }
+    if (key == ' ') {
+      started = false;
+      beatCount = 0;
     }
   }
 
@@ -483,6 +491,13 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
       dynamics = map(abs(rightHandYDownBeatY - rightHandYUpBeatYPrev), 0, abs(dynamicsRange[0]-dynamicsRange[1]), 0, 1);
       sendOSCMessage("/hyperconductor/bpm", bpm);
       sendOSCMessage("/hyperconductor/dynamics", dynamics);
+      if(started) {
+        beatCount += 1;
+        if (beatCount == 4){
+          sendOSCMessage("/hyperconductor/started", 1);
+          println("started: "+started);
+        }
+      }
       rightHandYDownBeatXPrev = rightHandYDownBeatX;
       rightHandYDownBeatYPrev = rightHandYDownBeatY;
       ellipse(x2, yFiltered2, 50*dynamics, 50*dynamics);
@@ -510,9 +525,22 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   fill(255);
   String range = "dynamicsRange = {" + dynamicsRange[0] + "," +dynamicsRange[1]+"}";
 
-  text( "Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics + " " + range, 10, 20);
+  text("Started: " + started + " beatCount: " + beatCount + " Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics +  " " + range, 10, 20);
 }
 
+void leapOnKeyTapGesture(KeyTapGesture g){
+    int     id                  = g.getId();
+    Finger  finger              = g.getFinger();
+    PVector position            = g.getPosition();
+    PVector direction           = g.getDirection();
+    long    duration            = g.getDuration();
+    float   duration_seconds    = g.getDurationInSeconds();
+
+    println("KeyTapGesture: "+id);
+    if (!started) {
+      started = true;
+    }
+}
 
 
 
