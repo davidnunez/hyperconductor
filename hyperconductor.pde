@@ -66,6 +66,7 @@ float dynamics = 0;
 float registration = 0;
 float weighting = 0;
 float articulation = 0;
+float soloDynamics, soloTimbre, soloVibrato = 0;
 LeapMotion leap;
 
 int beatCount = 0;
@@ -133,10 +134,10 @@ void draw(){
       drawSignal(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
     } else {
       background(180); // clear screen
-
-      float soloDynamics = map(abs(leftHandX-rightHandX), 0, 1, 0, 2);
-      float soloTimbre   = map(abs(leftHandY-rightHandY), 0, 1, 0, 1);
-      float soloVibrato  = map(abs(leftHandZ-rightHandZ), 0, 1, 0, 1);
+      soloDynamics = map(leftHand.getPosition().dist(rightHand.getPosition()), 0, 1000, 0, 2);
+      soloTimbre = map(rightHandY, 0,1,1,0);
+      soloVibrato  = map(abs(leftHandZ-rightHandZ), 0, 1, 0, 1);
+      float soloVibrato = rightHandZ;
       text( "dynamics: " + soloDynamics + " \ntimbre: " + soloTimbre + "\nvibrato: " + soloVibrato, 10, 20);
       sendOSCMessage("/hyperconductor2/dynamics", soloDynamics);
       sendOSCMessage("/hyperconductor2/timbre", soloTimbre);
