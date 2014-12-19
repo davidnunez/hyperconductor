@@ -81,8 +81,8 @@ void setup(){
     articulatonRange = new float[]{0,64};
     weightingRange = new float[]{textBgHeight, sectionSize};
     oscP5 = new OscP5(this,12001);
-    myRemoteLocation = new NetAddress("192.168.1.247",12002);
-
+//    myRemoteLocation = new NetAddress("192.168.1.247",12002);
+    myRemoteLocation = new NetAddress("127.0.0.1",12002);
     // ...
     rightHandYFilter = new SignalFilter(this);
     rightHandZFilter = new SignalFilter(this);
@@ -271,7 +271,7 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
   //------------------------------------
   // Draw X signals
   pushMatrix();
-  translate(0, sectionSize * 1);
+  translate(0, sectionSize * 0);
   drawYSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
   popMatrix();
 
@@ -283,10 +283,10 @@ void drawSignal(float leftHandX, float leftHandY, float leftHandZ, float rightHa
 
 
 
-  pushMatrix();
-  translate(0, sectionSize * 2);
-  drawZSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
-  popMatrix();
+  // pushMatrix();
+  // translate(0, sectionSize * 2);
+  // drawZSignals(leftHandX, leftHandY, leftHandZ, rightHandX, rightHandY, rightHandZ);
+  // popMatrix();
 
 
 
@@ -359,16 +359,16 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   float xNoisy1 = map(rightHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);
   float xNoisy2 = map(rightHandX, 0.0, 1.0, textBgHeight, sectionSize);
   stroke(10);
-  line(x1, xNoisy1, x2, xNoisy2);
+  //line(x1, xNoisy1, x2, xNoisy2);
   xNoisy1 = map(leftHandXPrev, 0.0, 1.0, textBgHeight, sectionSize);  
   xNoisy2 = map(leftHandX, 0.0, 1.0, textBgHeight, sectionSize);
-  line(x1, xNoisy1, x2, xNoisy2);
+  //line(x1, xNoisy1, x2, xNoisy2);
 
   noStroke();
   float xFiltered1 = map(rightHandXFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
   float xFiltered2 = map(rightHandXFiltered, 0.0, 1.0, textBgHeight, sectionSize);
   stroke(255);
-  line(x1, xFiltered1, x2, xFiltered2);
+  //line(x1, xFiltered1, x2, xFiltered2);
 
 
   rightHandXSlope = xFiltered2 - xFiltered1;
@@ -376,7 +376,7 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
     if (rightHandXSlope <= 0) {
       articulation = map(abs(rightHandXDownBeatY - rightHandXUpBeatYPrev), 0, abs(articulatonRange[0]-articulatonRange[1]), 0, 1);
       sendOSCMessage("/hyperconductor/articulation", articulation);
-      ellipse(x2, xFiltered2, 10,10);
+      //ellipse(x2, xFiltered2, 10,10);
       rightHandXDownBeatX = x2;
       rightHandXDownBeatY = xFiltered2;
       rightHandXDownBeatXPrev = rightHandXDownBeatX;
@@ -387,7 +387,7 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   if (rightHandXSlopePrev < 0) {
     if (rightHandXSlope >= 0) {
       fill(10);
-      ellipse(x2, xFiltered2, 10, 10);
+      //ellipse(x2, xFiltered2, 10, 10);
       fill(255);
       rightHandXUpBeatX = x2;
       rightHandXUpBeatY = xFiltered2;
@@ -402,12 +402,12 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
 
   xFiltered1 = map(leftHandXFilteredPrev, 0.0, 1.0, textBgHeight, sectionSize);
   xFiltered2 = map(leftHandXFiltered, 0.0, 1.0, textBgHeight, sectionSize);
-  line(x1, xFiltered1, x2, xFiltered2);
+  //line(x1, xFiltered1, x2, xFiltered2);
 
   leftHandXSlope = xFiltered2 - xFiltered1;
   if (leftHandXSlopePrev > 0) {
     if (leftHandXSlope <= 0) {
-      ellipse(x2, xFiltered2, 10,10);
+      //ellipse(x2, xFiltered2, 10,10);
       leftHandXDownBeatX = x2;
       leftHandXDownBeatY = xFiltered2;
       leftHandXDownBeatXPrev = leftHandXDownBeatX;
@@ -418,7 +418,7 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   if (leftHandXSlopePrev < 0) {
     if (leftHandXSlope >= 0) {
       fill(10);
-      ellipse(x2, xFiltered2, 10, 10);
+      //ellipse(x2, xFiltered2, 10, 10);
       fill(255);
       leftHandXUpBeatX = x2;
       leftHandXUpBeatY = xFiltered2;
@@ -444,11 +444,11 @@ void drawXSignals(float leftHandX, float leftHandY, float leftHandZ, float right
 
 
 
-  noStroke();
-  fill(textBgColor);
-  rect(0, 0, width, textBgHeight );
-  fill(255);
-  text( "X-Position\tregistration:" + registration + " articulation: " + articulation + " rawLeftX: " + leap.getLeftHand().getPosition().x + " rawRightX: " + leap.getRightHand().getPosition().x, 10, 20 );
+  // noStroke();
+  // fill(textBgColor);
+  // rect(0, 0, width, textBgHeight );
+  // fill(255);
+  // text( "X-Position\tregistration:" + registration + " articulation: " + articulation + " rawLeftX: " + leap.getLeftHand().getPosition().x + " rawRightX: " + leap.getRightHand().getPosition().x, 10, 20 );
 }
 void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float rightHandX, float rightHandY, float rightHandZ) {
   if(tuningStatus == TuningStatus.DYNAMICS) {
@@ -526,7 +526,18 @@ void drawYSignals(float leftHandX, float leftHandY, float leftHandZ, float right
   fill(255);
   String range = "dynamicsRange = {" + dynamicsRange[0] + "," +dynamicsRange[1]+"}";
 
-  text("Started: " + started + " beatCount: " + beatCount + " Y-Position     BPM: " + bpm + "\t dynamics: " + dynamics +  " " + range, 10, 20);
+
+  stroke(180);
+  strokeWeight(10);  // Beastly
+  //line(0, (sectionSize-textBgHeight)/2, width, (sectionSize-textBgHeight)/2);
+  line(0, textBgHeight+5, width, textBgHeight+5);
+  stroke(0, 0, 200, 100);
+  dashline(0, textBgHeight+5, width, textBgHeight+5, new float[] {20*articulation,20});
+  //dashline(0, (sectionSize-textBgHeight)/2, x2, (sectionSize-textBgHeight)/2, new float[] {5,5});
+  strokeWeight(1);
+
+  String headerText = "Started: " + started + " beatCount: " + beatCount;
+  text("Started: " + started + " beatCount: " + beatCount + " Y-Position " + "    BPM: " + String.format("%.2f", bpm) + "\t Dynamics: " + String.format("%.2f", dynamics) +  "\tArticulation: " + String.format("%.2f", articulation), 10, 20);
 }
 
 void leapOnKeyTapGesture(KeyTapGesture g){
@@ -543,7 +554,46 @@ void leapOnKeyTapGesture(KeyTapGesture g){
     }
 }
 
-
+void dashline(float x0, float y0, float x1, float y1, float[ ] spacing) 
+{ 
+  float distance = dist(x0, y0, x1, y1); 
+  float [ ] xSpacing = new float[spacing.length]; 
+  float [ ] ySpacing = new float[spacing.length]; 
+  float drawn = 0.0;  // amount of distance drawn 
+ 
+  if (distance > 0) 
+  { 
+    int i; 
+    boolean drawLine = true; // alternate between dashes and gaps 
+ 
+    /* 
+      Figure out x and y distances for each of the spacing values 
+      I decided to trade memory for time; I'd rather allocate 
+      a few dozen bytes than have to do a calculation every time 
+      I draw. 
+    */ 
+    for (i = 0; i < spacing.length; i++) 
+    { 
+      xSpacing[i] = lerp(0, (x1 - x0), spacing[i] / distance); 
+      ySpacing[i] = lerp(0, (y1 - y0), spacing[i] / distance); 
+    } 
+ 
+    i = 0; 
+    while (drawn < distance) 
+    { 
+      if (drawLine) 
+      { 
+        line(x0, y0, x0 + xSpacing[i], y0 + ySpacing[i]); 
+      } 
+      x0 += xSpacing[i]; 
+      y0 += ySpacing[i]; 
+      /* Add distance "drawn" by this line or gap */ 
+      drawn = drawn + mag(xSpacing[i], ySpacing[i]); 
+      i = (i + 1) % spacing.length;  // cycle through array 
+      drawLine = !drawLine;  // switch between dash and gap 
+    } 
+  } 
+} 
 
 void sendOSCMessages() {
   sendOSCMessage("/hyperconductor/registration", registration);
