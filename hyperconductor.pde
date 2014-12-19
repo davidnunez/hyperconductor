@@ -130,7 +130,7 @@ void draw(){
     } else {
       background(180); // clear screen
 
-      float soloDynamics = map(abs(leftHandX-rightHandX), 0, 1, 0, 1);
+      float soloDynamics = map(abs(leftHandX-rightHandX), 0, 1, 0, 2);
       float soloTimbre   = map(abs(leftHandY-rightHandY), 0, 1, 0, 1);
       float soloVibrato  = map(abs(leftHandZ-rightHandZ), 0, 1, 0, 1);
       text( "dynamics: " + soloDynamics + " \ntimbre: " + soloTimbre + "\nvibrato: " + soloVibrato, 10, 20);
